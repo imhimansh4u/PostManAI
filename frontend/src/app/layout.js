@@ -2,6 +2,8 @@ import { Geist_Mono, Syne } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext.jsx";
 import NavbarWrapper from "@/components/NavBarWrapper";
+import { Toaster } from "sonner";
+
 const syne = Syne({
   subsets: ["latin"],
   variable: "--font-syne",
@@ -36,6 +38,7 @@ export default function RootLayout({ children }) {
           <NavbarWrapper />
           <main style={{paddingTop : "72px"}}>
             {children}
+            <Toaster richColors position="top-right" />
           </main>
         </AuthProvider>
       </body>
