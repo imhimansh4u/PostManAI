@@ -1,8 +1,4 @@
 import mongoose from "mongoose";
-//  Project Schema
-// A Project = one API being tested. It holds the base URL,
-// auth config, GitHub repo connection, and RAG indexing status.
-// One user can have many projects.
 
 const ProjectSchema = new mongoose.Schema(
   {
@@ -47,6 +43,11 @@ const ProjectSchema = new mongoose.Schema(
       },
       token: { type: String, default: null, select: false },
       headerName: { type: String, default: "x-api-key" },
+    },
+    cookieJar: {
+      type: Map,
+      of: String,
+      default: {},
     },
 
     // GitHub Integration

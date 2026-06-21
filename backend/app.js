@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import userRoutes from "./routes/user.route.js";
 import projectRoutes from "./routes/project.route.js";
 import githubRoutes from "./routes/github.route.js";
+import testRoutes from "./routes/test.route.js"
 
 dotenv.config(); // ← must be before everything else
 
@@ -33,5 +34,8 @@ app.use("/postmanai/v1/projects", projectRoutes);
 
 // Now Github Routes
 app.use("/postmanai/v1/github", githubRoutes);
+
+// Now Test Routes
+app.use("/postmanai/v1/test", testRoutes);
 
 export { app };
