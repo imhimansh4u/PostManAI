@@ -1,19 +1,23 @@
-"use client"
+"use client";
 
-import { usePathname } from "next/navigation"
-import Navbar from "@/components/landing/Navbar"
+import { usePathname } from "next/navigation";
+import Navbar from "@/components/landing/Navbar";
 
 // Pages where Navbar should NOT appear
-const hiddenRoutes = [
-  "/auth/login",
-  "/auth/signup",
-]
+const hiddenRoutes = ["/auth/login", "/auth/signup"];
 
-export default function NavbarWrapper() {
-  const pathname = usePathname()
+export default function NavbarWrapper({ children }) {
+  const pathname = usePathname();
+  const hasNavbar = !hiddenRoutes.includes(pathname);
 
-  // If current page is in hiddenRoutes → don't show Navbar
-  if (hiddenRoutes.includes(pathname)) return null
+  if (!hasNavbar) {
+    return <div className="app-main no-navbar">{children}</div>;
+  }
 
-  return <Navbar />
+  return (
+    <>
+      <Navbar />
+      <div className="app-main">{children}</div>
+    </>
+  );
 }

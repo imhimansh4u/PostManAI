@@ -1,12 +1,18 @@
-import React from 'react'
-import Sidebar from '@/components/project/sidebar'
+"use client";
+
+import { useState } from "react";
+import Sidebar from "@/components/project/sidebar";
+import MainArea from "@/components/project/MainArea";
 
 const page = () => {
-  return (
-    <div>
-      <Sidebar />
-    </div>
-  )
-}
+  const [activeTab, setActiveTab] = useState("test");
 
-export default page
+  return (
+    <div className="flex w-full h-screen bg-[#06060a]">
+      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      <MainArea activeTab={activeTab} />
+    </div>
+  );
+};
+
+export default page;

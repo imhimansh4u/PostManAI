@@ -14,10 +14,17 @@ import {
 import { useParams, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import GithubSettingsPopup from "./_components/GithubSettingsPopup";
-import { Settings, ExternalLink, GitBranch, Loader2 } from "lucide-react";
+import {
+  Settings,
+  ExternalLink,
+  GitBranch,
+  Loader2,
+  Terminal,
+  History,
+} from "lucide-react";
 import { toast } from "sonner";
 
-export default function Sidebar() {
+export default function Sidebar({ activeTab, onTabChange }) {
   const { id } = useParams();
   const searchParams = useSearchParams();
   const { user } = useAuth();
@@ -357,7 +364,10 @@ export default function Sidebar() {
                             disabled={
                               !repoSelected || !branchSelected || savingRepo
                             }
-                            style={{ paddingTop: "8px", paddingBottom: "8px" }}
+                            style={{
+                              paddingTop: "8px",
+                              paddingBottom: "8px",
+                            }}
                             className="w-full text-xs font-semibold rounded-xl border border-zinc-800 text-zinc-300 bg-gradient-to-b from-zinc-900 to-[#08080c] disabled:opacity-40 transition-all"
                           >
                             {savingRepo ? "Saving..." : "Save Repository"}
@@ -399,6 +409,53 @@ export default function Sidebar() {
         deletingIndexedFiles={deletingIndexedFiles}
         isRateLimited={isRateLimited}
       />
+
+      <div className="mt-auto border-t border-zinc-800/80 bg-[#09090f]/40 px-4 py-3.5 backdrop-blur-sm">
+        {/* Optional: Section Label for context */}
+        <p className="text-[10px] uppercase tracking-wider font-semibold text-zinc-600 mb-2.5 px-1">
+          Workspace
+        </p>
+
+        <div className="flex items-center gap-2 bg-[#08080c] border border-zinc-800/40 p-1 rounded-xl">
+          <button
+            type="button"
+            onClick={() => onTabChange("test")}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium tracking-wide relative overflow-hidden transition-all duration-200 group active:scale-[0.98] ${
+              activeTab === "test"
+                ? "text-white bg-gradient-to-b from-zinc-800/80 to-zinc-900 shadow-[0_1px_2px_rgba(0,0,0,0.4)] border border-zinc-700/50"
+                : "text-zinc-400 hover:bg-zinc-900/50 hover:text-zinc-200 border border-transparent"
+            }`}
+          >
+            <Terminal
+              className={`h-3.5 w-3.5 transition-colors duration-200 ${
+                activeTab === "test"
+                  ? "text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.3)]"
+                  : "text-zinc-500 group-hover:text-zinc-400"
+              }`}
+            />
+            <span>Test</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onTabChange("history")}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium tracking-wide relative overflow-hidden transition-all duration-200 group active:scale-[0.98] ${
+              activeTab === "history"
+                ? "text-white bg-gradient-to-b from-zinc-800/80 to-zinc-900 shadow-[0_1px_2px_rgba(0,0,0,0.4)] border border-zinc-700/50"
+                : "text-zinc-400 hover:bg-zinc-900/50 hover:text-zinc-200 border border-transparent"
+            }`}
+          >
+            <History
+              className={`h-3.5 w-3.5 transition-colors duration-200 ${
+                activeTab === "history"
+                  ? "text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.3)]"
+                  : "text-zinc-500 group-hover:text-zinc-400"
+              }`}
+            />
+            <span>History</span>
+          </button>
+        </div>
+      </div>
     </aside>
   );
 }

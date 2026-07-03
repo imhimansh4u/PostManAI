@@ -19,13 +19,13 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "PostmanAI — Test APIs in Plain English",
   description:
-    "Describe your API test in English. AI writes it, runs it, and tells you in plain English why it failed.",
+    "Describe your API in English. AI writes it, runs it, and tells you in plain English why it failed.",
   keywords: ["API testing", "AI", "LangChain", "developer tools", "QA"],
   authors: [{ name: "Himanshu" }],
   openGraph: {
     title: "PostmanAI — Test APIs in Plain English",
     description:
-      "Describe your API test in English. AI writes it, runs it, and tells you why it failed.",
+      "Describe your API in English. AI writes it, runs it, and tells you why it failed.",
     type: "website",
   },
 };
@@ -35,11 +35,10 @@ export default function RootLayout({ children }) {
     <html lang="en" className={`${syne.variable} ${geistMono.variable}`}>
       <body>
         <AuthProvider>
-          <NavbarWrapper />
-          <main style={{paddingTop : "72px"}}>
+          <NavbarWrapper>
             {children}
             <Toaster richColors position="top-right" />
-          </main>
+          </NavbarWrapper>
         </AuthProvider>
       </body>
     </html>
