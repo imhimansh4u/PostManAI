@@ -47,12 +47,12 @@ const registerUser = asyncHandler(async (req, res) => {
   });
 
   if (existedUser) {
-      // Return 409 Conflict instead of throwing a generic server error
-      return res.status(409).json({
-        success: false,
-        message: "User already exists with this email.",
-      });
-    }
+    // Return 409 Conflict instead of throwing a generic server error
+    return res.status(409).json({
+      success: false,
+      message: "User already exists with this email.",
+    });
+  }
   const avatarLocalPath = req.files?.avatar?.[0]?.path; // For the avatar
   let avatar;
   let createdUser;
@@ -105,46 +105,66 @@ const registerUser = asyncHandler(async (req, res) => {
 
 // Now function to Login a Existing User
 const loginUser = asyncHandler(async (req, res, next) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  // now validation part
-  if ([email, password].some((field) => field?.trim() === "")) {
-    throw new ApiError(405, "Every field is required");
+    if ([email, password].some((field) => field?.trim() === "")) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Every field is required" });
+    }
+
+    const user = await User.findOne({ email }).select("+password");
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({
+          success: false,
+          message: "Couldn't find the user, Please register",
+        });
+    }
+
+    const isPasswordValid = await user.comparePassword(password);
+    if (!isPasswordValid) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Please enter Correct Credentials" });
+    }
+
+    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+      user._id,
+    );
+    const loggedinUser = await User.findById(user._id).select(
+      "-password -refreshToken",
+    );
+
+    if (!loggedinUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "This user is not found" });
+    }
+
+    const options = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+    };
+
+    return res
+      .status(200)
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", refreshToken, options)
+      .json(
+        new ApiResponse(200, loggedinUser, "User is logged in successfully"),
+      );
+  } catch (error) {
+    console.error("Login error:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: error.message || "Login failed" });
   }
-  const user = await User.findOne({
-    email,
-  }).select("+password");
-
-  if (!user) {
-    throw new ApiError(404, "Couldn't find the user , Please register");
-  }
-  // Validate the Password
-  const isPasswordValid = await user.comparePassword(password);
-  if (!isPasswordValid) {
-    throw new ApiError(404, "Please enter Correct Credentials");
-  }
-  // Get the Access and Refresh Tokens
-  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
-    user._id,
-  );
-
-  const loggedinUser = await User.findById(user._id).select(
-    "-password -refreshToken",
-  );
-  if (!loggedinUser) {
-    throw new ApiError(404, "This user is not found");
-  }
-
-  const options = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-  };
-
-  return res
-    .status(200)
-    .cookie("accessToken", accessToken, options) ////1.) Storing tokens in HTTP-only cookies is safer than localStorage or sessionStorage. 2.)Browsers automatically attach cookies to every request to your backend — so the user stays logged in.
-    .cookie("refreshToken", refreshToken, options)
-    .json(new ApiResponse(200, loggedinUser, "User is logged in successfully"));
 });
 
 // to logout any user
@@ -153,10 +173,10 @@ const logoutUser = asyncHandler(async (req, res) => {
     req.user._id,
     {
       $set: {
-        refreshToken: undefined,
+        refreshToken: null,
       },
     },
-    { new: true }, // // This actually sets that the returned value will now be the new one ...
+    { returnDocument: "after" }, // // This actually sets that the returned value will now be the new one ...
   );
   const options = {
     httpOnly: true,
@@ -187,4 +207,10 @@ const getCurrentUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, user, "User fetched successfully"));
 });
 
-export { generateAccessAndRefreshToken, loginUser, registerUser, logoutUser , getCurrentUser };
+export {
+  generateAccessAndRefreshToken,
+  loginUser,
+  registerUser,
+  logoutUser,
+  getCurrentUser,
+};

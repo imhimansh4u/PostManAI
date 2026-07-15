@@ -5,7 +5,8 @@ import dotenv from "dotenv";
 import userRoutes from "./routes/user.route.js";
 import projectRoutes from "./routes/project.route.js";
 import githubRoutes from "./routes/github.route.js";
-import testRoutes from "./routes/test.route.js"
+import testRoutes from "./routes/test.route.js";
+import chatRoutes from "./routes/chatRoute.js";
 
 dotenv.config(); // ← must be before everything else
 
@@ -37,5 +38,21 @@ app.use("/postmanai/v1/github", githubRoutes);
 
 // Now Test Routes
 app.use("/postmanai/v1/test", testRoutes);
+
+app.use((err, req, res, next) => {
+  const statusCode = err?.statusCode || 500;
+  const message = err?.message || "Something went wrong";
+
+  res.status(statusCode).json({
+    success: false,
+    message,
+    statusCode,
+    data: null,
+    errors: err?.errors || [],
+  });
+});
+
+// ChatMessage Routes
+app.use("/postmanai/v1", chatRoutes);
 
 export { app };

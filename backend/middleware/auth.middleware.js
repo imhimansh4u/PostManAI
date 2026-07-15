@@ -1,39 +1,34 @@
-import jwt from "jsonwebtoken"
-import User from "../models/User.js"
-import { ApiError } from "../utils/ApiError.js"
-import { asyncHandler } from "../utils/AsyncHandler.js"
-import { diskStorage } from "multer"
+import jwt from "jsonwebtoken";
+import User from "../models/User.js";
+import { ApiError } from "../utils/ApiError.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
-export const verifyJWT = asyncHandler(
-  async (req, _, next) => {
-    // step-1)-> Grab the access token from the request
-    const token =
-      req.cookies.accessToken ||
-      req.body.accessToken ||
-      req.header("Authorization")?.replace("Bearer ", "");
+export const verifyJWT = asyncHandler(async (req, _, next) => {
+  // step-1)-> Grab the access token from the request
+  const token =
+    req.cookies.accessToken ||
+    req.body.accessToken ||
+    req.header("Authorization")?.replace("Bearer ", "");
 
-      if(!token){
-        throw new ApiError(401,"Unauthorized");
-      }
-      try {
-        // 2)-> the part of decoding the access token
-        const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_KEY); // VERIFY  that the token getting from the request is valid n?
-        //3)-> Now grab the user from the decoded token
-        const userId = decodedToken?._id || decodedToken?.id;
-        const user = await User.findById(userId).select(
-          "-password -refreshToken"
-        );
-        if (!user) {
-          throw new ApiError(401, "Unauthorized");
-        }
-
-        req.user = user; // User Context: It attaches the authenticated user's details to the request object (req.user) for use in subsequent middleware or route handlers.
-        next();
-      } catch (error) {
-        throw new ApiError(401, error?.message || "Invalid token");
-      }
+  if (!token) {
+    throw new ApiError(401, "Unauthorized");
   }
-);
+  try {
+    // 2)-> the part of decoding the access token
+    const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_KEY); // VERIFY  that the token getting from the request is valid n?
+    //3)-> Now grab the user from the decoded token
+    const userId = decodedToken?._id || decodedToken?.id;
+    const user = await User.findById(userId).select("-password -refreshToken");
+    if (!user) {
+      throw new ApiError(401, "Unauthorized");
+    }
+
+    req.user = user; // User Context: It attaches the authenticated user's details to the request object (req.user) for use in subsequent middleware or route handlers.
+    next();
+  } catch (error) {
+    throw new ApiError(401, error?.message || "Invalid token");
+  }
+});
 
 // NOTE-> STUDYING ABOUT HEADERS
 

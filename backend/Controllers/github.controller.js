@@ -209,7 +209,7 @@ const selectRepo = asyncHandler(async (req, res) => {
       "github.branch": branch,
       "github.indexStatus": "idle",
     },
-    { new: true }, // return the updated document
+    { returnDocument: "after" }, // return the updated document
   );
 
   return res.status(200).json(
@@ -228,7 +228,6 @@ const selectRepo = asyncHandler(async (req, res) => {
 // CONTROLLER 4 — syncRepo
 
 // -> To sync the Repo
-
 
 const syncRepo = asyncHandler(async (req, res) => {
   const { projectId } = req.body;
@@ -270,7 +269,7 @@ const syncRepo = asyncHandler(async (req, res) => {
       "github.indexStatus": "indexing",
       "github.indexError": null,
     },
-    { new: true },
+    { returnDocument: "after" },
   );
 
   // Step 2: Fetch route files from GitHub via Octokit
@@ -285,7 +284,10 @@ const syncRepo = asyncHandler(async (req, res) => {
   // Python will chunk each file by endpoint
   // Embed using sentence-transformers
   // Store in ChromaDB with projectId as collection namespace
-  const aiServiceUrl = process.env.AI_SERVICE_URL || "http://localhost:8000";
+  const aiServiceUrl = process.env.AI_SERVICE_URL;
+  if (!aiServiceUrl) {
+    throw new ApiError(500, "AI_SERVICE_URL is not configured");
+  }
 
   const aiResponse = await fetch(`${aiServiceUrl}/ai/index-repo`, {
     method: "POST",
@@ -309,7 +311,7 @@ const syncRepo = asyncHandler(async (req, res) => {
         "github.indexStatus": "error",
         "github.indexError": `AI service error: ${aiResponse.statusText}`,
       },
-      { new: true },
+      { returnDocument: "after" },
     );
     throw new ApiError(500, "Failed to index repository. AI service error");
   }
@@ -328,7 +330,7 @@ const syncRepo = asyncHandler(async (req, res) => {
       "github.indexError": null,
       ragSource: "github", // tell the system to use GitHub chunks for RAG
     },
-    { new: true },
+    { returnDocument: "after" },
   );
 
   return res.status(200).json(
@@ -367,7 +369,7 @@ const disconnectGithub = asyncHandler(async (req, res) => {
       "github.profileUrl": null,
       "github.connectedAt": null,
     },
-    { new: true },
+    { returnDocument: "after" },
   );
   // Dont stop executing (find all the Projects and delete indexed files associated with them)
   const projects = await Project.find({ userId: req.user._id }).select("_id");
@@ -426,7 +428,10 @@ const deleteIndexedFiles = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Github Not Connected");
   }
 
-  const aiServiceUrl = process.env.AI_SERVICE_URL || "http://localhost:8000";
+  const aiServiceUrl = process.env.AI_SERVICE_URL;
+  if (!aiServiceUrl) {
+    throw new ApiError(500, "AI_SERVICE_URL is not configured");
+  }
   const aiResponse = await fetch(`${aiServiceUrl}/ai/delete-index`, {
     method: "DELETE",
     headers: {
@@ -459,5 +464,5 @@ export {
   githubCallback,
   getRepos,
   getBranches,
-  deleteIndexedFiles
+  deleteIndexedFiles,
 };

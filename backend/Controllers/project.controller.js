@@ -105,4 +105,7 @@ const fetchProjectDetail = asyncHandler(async (req,res)=>{
           .json(new ApiResponse(200,project,"Project fetched Successfully"));
 })
 
+
+
+// To Fetch all the Cookies related to this Project
 export { newProject, listAllProjects ,fetchProjectDetail};

@@ -153,6 +153,7 @@ const TestSchema = new mongoose.Schema(
       },
       token: { type: String, default: null },
       headerName: { type: String, default: null },
+      captureAuthToken: { type: Boolean, default: false },
     },
   },
   {

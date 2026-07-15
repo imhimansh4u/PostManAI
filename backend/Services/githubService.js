@@ -175,12 +175,17 @@ export async function fetchRepoRouteFiles(
       path.includes("controllers") ||
       path.includes("services") ||
       path.includes("service") ||
+      path.includes("app") ||
+      path.includes("index") || 
+      path.includes("main")  ||
+      path.includes("server")  ||
       path.includes("handler");
 
     // ── Python FastAPI / Django patterns ──
     const isPythonRoute =
       path.includes("views.py") ||
       path.includes("urls.py") ||
+      path.includes("main.py") ||
       path.includes("routers.py") ||
       path.endsWith("_router.py") ||
       path.endsWith("_routes.py");
