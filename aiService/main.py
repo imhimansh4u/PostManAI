@@ -2,8 +2,8 @@ from fastapi import FastAPI,Request,HTTPException
 from routers.index_router import router as index_router
 from routers.delete_Indexed_files_router import router as delete_Indexed_files_router
 from routers.generate_router import router as generate_router
-from routers.explain_router import router as explain_router
 from fastapi.middleware.cors import CORSMiddleware
+from routers.chat_router import router as chat_router
 
 from dotenv import load_dotenv
 import os
@@ -46,4 +46,4 @@ def health_check():
 app.include_router(index_router)
 app.include_router(generate_router)
 app.include_router(delete_Indexed_files_router)
-app.include_router(explain_router)
+app.include_router(chat_router)

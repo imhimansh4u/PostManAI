@@ -14,7 +14,7 @@ async def index_repo(request: IndexRepoRequest):
     # Now Embedding of the data and Preparing it to pass to the PineCone for storage
     vectors = []
     for index,chunk in enumerate(all_chunks):
-        embedding = embed_query(chunk["text"])
+        embedding = await embed_query(chunk["text"])
         vectors.append({
             "id" : f"{request.projectId}_{chunk["metadata"]["file_path"]}_{index}",
             "values" : embedding,
@@ -29,10 +29,3 @@ async def index_repo(request: IndexRepoRequest):
         endpointCount=len(vectors),
         indexedFiles=list({chunk["metadata"]["file_path"] for chunk in all_chunks})
     )
-        
-
-    
-    
-
-
-    

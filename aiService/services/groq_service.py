@@ -19,6 +19,8 @@ You are an expert QA Automation Engineer specialized in backend API testing, sec
 
 ### INSTRUCTIONS & VALIDATION RULES
 1. Analyze the context routes to find the exact HTTP Method and Path.
+2. The exact Route is often build by looking into two different Files usually , one in the routes folder
+ and other the place where route is Registered , Build the Route Carefully.
 2. Identify required headers, query parameters, path parameters, and body fields.
 3. Generate multiple test scenarios covering:
    - Happy Path
@@ -95,7 +97,7 @@ async def generate_test(description: str, context_chunks: list) -> list:
     # Extract text from each Pinecone match and join into one context
     code_context = ""
     for chunk in context_chunks:
-        code_context += chunk.metadata["text"] + "\n\n"  #It is Because PineCone returns are not plain dict,they are PineCone Objects,which contains properties like metadata
+        code_context += chunk.content + "\n\n"  #It is Because PineCone returns are not plain dict,they are PineCone Objects,which contains properties like metadata
 
     # Format the prompt with actual values
     prompt = GENERATE_TEST_PROMPT.format(
