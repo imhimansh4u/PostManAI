@@ -5,6 +5,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import Project from "../models/Project.js";
 import Test from "../models/Test.js";
 import TestSuite from "../models/TestSuite.js";
+import TestRun from "../models/Testrun.js"
 
 // For Creating a new Test Suite
 const createTestSuite = asyncHandler(async (req, res) => {

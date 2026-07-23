@@ -43,13 +43,8 @@ const ProjectSchema = new mongoose.Schema(
       },
       token: { type: String, default: null, select: false },
       headerName: { type: String, default: "x-api-key" },
-    },
-    cookieJar: {
-      type: Map,
-      of: String,
-      default: {},
-    },
-
+    },   
+    
     // GitHub Integration
     github: {
       // Is GitHub repo connected to this project?

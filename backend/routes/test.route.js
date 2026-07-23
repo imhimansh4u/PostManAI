@@ -4,8 +4,6 @@ import {
   runTest,
   getTests,
   updateTest,
-  updateCookies,
-  fetchCookies,
 } from "../Controllers/test.controller.js";
 
 const router = Router();
@@ -17,8 +15,5 @@ router.route("/run").post(verifyJWT, runTest);
 // To Update any Test case
 router.route("/:testId").patch(verifyJWT, updateTest);
 // Cookies: update manually or fetch current jar
-router
-  .route("/projects/:projectId/cookies")
-  .get(verifyJWT, fetchCookies)
-  .post(verifyJWT, updateCookies);
+
 export default router;

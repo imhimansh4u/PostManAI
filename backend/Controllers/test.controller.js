@@ -93,36 +93,24 @@ const runTest = asyncHandler(async (req, res) => {
         defaultDomain = null;
       }
 
-      const candidateCookiesFromDb = await Cookie.find({ projectId });
-      // include legacy map entries from project.cookieJar for backward compatibility
-      const jarObj = project.cookieJar
-        ? Object.fromEntries(project.cookieJar)
-        : {};
-      const jarCookies = Object.keys(jarObj).map((name) => ({
-        name,
-        value: jarObj[name],
-        domain: defaultDomain,
-        path: "/",
-        httpOnly: false,
-        secure: false,
-        sameSite: null,
-        expires: null,
-      }));
+      // fetch Only Valid Cookies
+      const curr = new Date();
+      const candidateCookiesFromDb = await Cookie.find({
+        projectId,
+        $or: [{ expires: null }, { expires: { $gte: curr } }],
+      });
 
-      const candidateCookies = [...candidateCookiesFromDb, ...jarCookies];
-
-      const applicable = candidateCookies.filter((c) => {
-        // expiry check
+      const applicable = candidateCookiesFromDb.filter((c) => {
         if (c.expires && c.expires < now) return false;
-        // secure check
         if (c.secure && !isSecure) return false;
-        // domain match
+        if (!requestHost) return false; // can't domain-match with no host to compare against
+
         const cookieDomain = (c.domain || requestHost).replace(/^\./, "");
         const hostMatch =
           requestHost === cookieDomain ||
           requestHost.endsWith("." + cookieDomain);
         if (!hostMatch) return false;
-        // path match
+
         const cookiePath = c.path || "/";
         if (!requestPath.startsWith(cookiePath)) return false;
         return true;
@@ -140,7 +128,7 @@ const runTest = asyncHandler(async (req, res) => {
         }
       }
     } catch (err) {
-      // non-fatal: if URL parsing fails or cookie lookup fails, continue without cookies
+      // non-fatal -> if URL parsing fails or cookie lookup fails, continue without cookies
       console.warn("Cookie attach failed:", err.message);
     }
 
@@ -150,11 +138,7 @@ const runTest = asyncHandler(async (req, res) => {
 
     let response;
     try {
-      response = await fetch(fullUrl, fetchOptions);  // actual api calling 
-      // code for debugging 
-      console.log("Method:", testCase.method);
-      console.log("Full URL:", fullUrl);
-      console.log("Outgoing headers:", headers);
+      response = await fetch(fullUrl, fetchOptions); // actual api calling
       responseTime = Date.now() - start;
       actualStatus = response.status;
 
@@ -214,11 +198,15 @@ const runTest = asyncHandler(async (req, res) => {
             else if (key === "path") cookie.path = val || "/";
             else if (key === "httponly") cookie.httpOnly = true;
             else if (key === "secure") cookie.secure = true;
-            else if (key === "samesite")
-              cookie.sameSite = val
-                ? val.charAt(0).toUpperCase() + val.slice(1)
-                : null;
-            else if (key === "expires") {
+            else if (key === "samesite") {
+              const normalized = val.toLowerCase();
+              cookie.sameSite =
+                normalized === "lax" ||
+                normalized === "strict" ||
+                normalized === "none"
+                  ? normalized.charAt(0).toUpperCase() + normalized.slice(1)
+                  : null; // unrecognized value — don't silently save garbage into the enum
+            } else if (key === "expires") {
               const d = new Date(val);
               if (!isNaN(d)) cookie.expires = d;
             } else if (key === "max-age") {
@@ -447,7 +435,10 @@ const getTests = asyncHandler(async (req, res) => {
       throw error;
     }
 
-    throw new ApiError(500, `AI Test Generation Failed: ${error.message} and ${error?.response?.data}`);
+    throw new ApiError(
+      500,
+      `AI Test Generation Failed: ${error.message} and ${error?.response?.data}`,
+    );
   }
 
   if (!Array.isArray(aiTests) || aiTests.length === 0) {
@@ -506,7 +497,6 @@ const getTests = asyncHandler(async (req, res) => {
 });
 
 // Helper Function to check and evaluate the assersions....
-
 
 // const evaluateAssertions = (assertions, actualBody, responseTime) => {
 //   return assertions.map((assertion) => {
@@ -618,9 +608,8 @@ const getTests = asyncHandler(async (req, res) => {
 //   });
 // };
 
-
-
-const updateTest = asyncHandler(async (req, res) => {   // To change the Test details
+const updateTest = asyncHandler(async (req, res) => {
+  // To change the Test details
   const { testId } = req.params;
   const {
     method,
@@ -663,153 +652,5 @@ const updateTest = asyncHandler(async (req, res) => {   // To change the Test de
 });
 
 // Update project's cookie jar manually
-const updateCookies = asyncHandler(async (req, res) => {
-  const { projectId } = req.params;
-  const { cookies } = req.body;
 
-  if (
-    !projectId ||
-    !cookies ||
-    typeof cookies !== "object" ||
-    Array.isArray(cookies)
-  ) {
-    throw new ApiError(422, "projectId and a cookies object are required");
-  }
-
-  const project = await Project.findOne({
-    _id: projectId,
-    userId: req.user._id,
-  });
-  if (!project) throw new ApiError(404, "Project not found");
-
-  // Validate every value BEFORE writing anything — fail the whole request up front
-  // rather than partially applying a batch and silently dropping bad entries.
-  const entries = Object.entries(cookies);
-  if (entries.length === 0) {
-    throw new ApiError(422, "cookies object must contain at least one entry");
-  }
-  for (const [name, value] of entries) {
-    if (typeof value !== "string" || value.trim() === "") {
-      throw new ApiError(
-        422,
-        `Invalid value for cookie "${name}": must be a non-empty string`,
-      );
-    }
-  }
-
-  // Derive default domain from project.baseUrl for host-only cookie semantics
-  let defaultDomain = null;
-  try {
-    if (project.baseUrl) {
-      defaultDomain = new URL(project.baseUrl).hostname;
-    }
-  } catch (err) {
-    defaultDomain = null;
-  }
-
-  const now = new Date();
-  const path = "/"; // manual edits are assumed project-wide unless UI later exposes path override
-
-  // All-or-nothing: run every upsert inside a transaction so a mid-batch failure
-  // doesn't leave some cookies updated and others not, with a misleading 200 response.
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  try {
-    for (const [name, value] of entries) {
-      await Cookie.findOneAndUpdate(
-        { projectId, name, domain: defaultDomain, path },
-        {
-          // Only fields a manual edit is actually allowed to change.
-          $set: { value, lastSeen: now },
-          // Only applied when creating a brand-new cookie — never overwrites
-          // flags on a cookie that already exists from a real server response.
-          $setOnInsert: {
-            domain: defaultDomain,
-            path,
-            httpOnly: false,
-            secure: false,
-            sameSite: null,
-            expires: null,
-          },
-        },
-        { upsert: true, returnDocument: "after", session },
-      );
-    }
-    await session.commitTransaction();
-  } catch (err) {
-    await session.abortTransaction();
-    throw new ApiError(500, `Failed to update cookies: ${err.message}`);
-  } finally {
-    session.endSession();
-  }
-
-  // Re-fetch fresh, non-expired state to return to the client
-  const cookiesFromDb = await Cookie.find({
-    projectId,
-    $or: [{ expires: null }, { expires: { $gte: now } }],
-  });
-
-  // Flat map keyed by name+domain to avoid collapsing same-name cookies on different hosts
-  const mapping = {};
-  cookiesFromDb.forEach((c) => {
-    mapping[`${c.domain || "default"}:${c.name}`] = c.value;
-  });
-
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        { cookies: mapping, cookieList: cookiesFromDb },
-        "Cookies updated",
-      ),
-    );
-});
-
-// Fetch project's cookie jar
-const fetchCookies = asyncHandler(async (req, res) => {
-  const { projectId } = req.params;
-
-  if (!projectId) throw new ApiError(422, "projectId is required");
-
-  const project = await Project.findOne({
-    _id: projectId,
-    userId: req.user._id,
-  });
-  if (!project) throw new ApiError(404, "Project not found");
-
-  const now = new Date();
-  const cookiesFromDb = await Cookie.find({
-    projectId,
-    $or: [{ expires: null }, { expires: { $gte: now } }],
-  });
-  const mapping = {}; // contains only the (name:value) information about the cookies
-  const detailed = []; // Contains the full metadata of the Cookies also
-  cookiesFromDb.forEach((c) => {
-    mapping[c.name] = c.value;
-    detailed.push({
-      name: c.name,
-      value: c.value,
-      domain: c.domain,
-      path: c.path,
-      httpOnly: c.httpOnly,
-      secure: c.secure,
-      sameSite: c.sameSite,
-      expires: c.expires,
-    });
-  });
-
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        { cookies: mapping, cookieList: detailed },
-        "Project cookies fetched",
-      ),
-    );
-});
-
-
-export { runTest, getTests, updateTest, updateCookies, fetchCookies };
+export { runTest, getTests, updateTest };

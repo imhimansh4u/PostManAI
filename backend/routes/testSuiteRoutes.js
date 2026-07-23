@@ -17,3 +17,4 @@ router.route("/fetch/:projectId").get(verifyJWT, FetchTestSuite);
 router.route("/link/:runId/:suiteId").put(verifyJWT, linkTestRunToSuite);
 // to fetch all the testRuns of a Suite
 router.route("/testruns/:suiteId").get(verifyJWT, fetchTestRunsBySuite);
+export default router
