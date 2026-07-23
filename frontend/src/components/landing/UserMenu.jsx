@@ -1,5 +1,5 @@
 "use client";
-
+import Link from "next/link";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -222,14 +222,17 @@ const UserMenu = ({ user }) => {
               transition: "all 0.15s ease",
             }}
             className="hover:bg-zinc-900 group"
-            onClick={() => console.log("Docs shortcut initialized")}
           >
             <BookOpen
               size={14}
               className="text-zinc-500 group-hover:text-zinc-300"
             />
             <span
-              style={{ fontSize: "12px", fontWeight: "500", color: "#d4d4d8" }}
+              style={{
+                fontSize: "12px",
+                fontWeight: "500",
+                color: "#d4d4d8",
+              }}
               className="group-hover:text-white"
             >
               Documentation

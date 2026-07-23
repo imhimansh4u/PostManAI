@@ -15,12 +15,13 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { getTests, updateTest, runTest } from "@/app/lib/testApi";
 import KeyValueEditor from "./KeyValueEditor";
 import { Editor } from "@monaco-editor/react";
 import { toast } from "sonner";
+import { createSuite, fetchsuite, linkTestRun } from "@/app/lib/testSuiteApi";
 
 export default function MainAreaTestTab({ mode, onTestExecuted }) {
   const params = useParams();
@@ -49,17 +50,104 @@ export default function MainAreaTestTab({ mode, onTestExecuted }) {
   // state for the management of body
   const [bodyCode, setBodyCode] = useState("{}");
   // Now managing the after Response thing
-  //
   const [isSending, setIsSending] = useState(false);
-  const [responsePanelOpen, setResponsePanelOpen] = useState(false); //  For the response our Backend will Give us
+  const [responsePanelOpen, setResponsePanelOpen] = useState(false); // For the response our Backend will Give us
   const [apiResponse, setApiResponse] = useState(null);
   // Manages workspace view tracking without breaking element containers
   const [currentSubTab, setCurrentSubTab] = useState("body"); // "body" or "response"
+
+  // Dynamic helper to format and detect the response body output type
+  const getResponseEditorData = () => {
+    if (
+      !apiResponse ||
+      apiResponse.body === undefined ||
+      apiResponse.body === null
+    ) {
+      return { value: "", language: "plaintext" };
+    }
+
+    const rawBody = apiResponse.body;
+
+    // 1. Check if the response is natively an object/array (JSON)
+    if (typeof rawBody === "object") {
+      return {
+        value: JSON.stringify(rawBody, null, 2),
+        language: "json",
+      };
+    }
+
+    // 2. Check if the response is a string representation of HTML
+    if (typeof rawBody === "string") {
+      const trimmedBody = rawBody.trim();
+      if (
+        trimmedBody.startsWith("<html") ||
+        trimmedBody.startsWith("<!DOCTYPE") ||
+        trimmedBody.startsWith("<div") ||
+        (trimmedBody.startsWith("<") && trimmedBody.endsWith(">"))
+      ) {
+        return {
+          value: rawBody, // HTML should be preserved with its internal formatting strings
+          language: "html",
+        };
+      }
+
+      // 3. Check if the response is a string representation of JSON
+      try {
+        const parsed = JSON.parse(trimmedBody);
+        return {
+          value: JSON.stringify(parsed, null, 2),
+          language: "json",
+        };
+      } catch {
+        // Fallback to plain text if parsing fails
+        return {
+          value: rawBody,
+          language: "plaintext",
+        };
+      }
+    }
+
+    return { value: String(rawBody), language: "plaintext" };
+  };
+
+  const responseData = getResponseEditorData();
+
+  const normalizeTestRunResponse = (payload) => {
+    const wrapper = payload && typeof payload === "object" ? payload : {};
+    const inner =
+      wrapper?.data && typeof wrapper.data === "object"
+        ? wrapper.data
+        : wrapper;
+
+    const actualStatus =
+      inner?.actualStatus ?? wrapper?.statuscode ?? inner?.statusCode ?? 200;
+    const statusText =
+      inner?.status === "pass"
+        ? "PASS"
+        : inner?.status === "fail"
+          ? "FAIL"
+          : "OK";
+
+    return {
+      raw: wrapper,
+      status: actualStatus,
+      statusText,
+      time: inner?.responseTime ? `${inner.responseTime}ms` : "0ms",
+      body: inner?.actualBody ?? inner ?? null,
+      ...inner,
+    };
+  };
+
+  //
 
   // Simulated network dispatch execution method
   const handleSendRequest = async () => {
     setIsSending(true);
     setError("");
+    // Clear previous execution traces on a fresh click
+    setHasExecuted(false);
+    setActiveRunId(null);
+    setCurrentSuiteName("");
 
     if (!projectId) {
       setError("Missing project context.");
@@ -73,7 +161,6 @@ export default function MainAreaTestTab({ mode, onTestExecuted }) {
       return;
     }
 
-    // parse body
     let parsedBody = null;
     try {
       parsedBody = JSON.parse(bodyCode || "null");
@@ -88,7 +175,6 @@ export default function MainAreaTestTab({ mode, onTestExecuted }) {
       return acc;
     }, {});
 
-    // build testCase payload expected by backend
     const authPayload = { type: authType };
     if (authType === "Bearer") {
       authPayload.token = authToken;
@@ -117,13 +203,22 @@ export default function MainAreaTestTab({ mode, onTestExecuted }) {
         testCase: testCasePayload,
       });
 
-      const data = resp?.data || resp; // follow existing helper patterns
-      setApiResponse(data);
+      console.log("=== [DEBUG] ACTUAL TEST RUN RESPONSE ===", resp);
+
+      const normalized = normalizeTestRunResponse(resp);
+      setApiResponse(normalized);
       setResponsePanelOpen(true);
       setCurrentSubTab("response");
       toast.success("Response received.");
-      // notify parent MainArea so side panel can use this response too
-      if (typeof onTestExecuted === "function") onTestExecuted(data);
+
+      // 1. Extract the run ID safely based on your backend response pattern
+      const targetRunId = resp?.data?.testRunId || resp?.testRunId;
+      setActiveRunId(targetRunId);
+
+      // 2. Mark explicitly that the test request successfully ran!
+      setHasExecuted(true);
+
+      if (typeof onTestExecuted === "function") onTestExecuted(normalized);
     } catch (err) {
       const message =
         err?.response?.data?.message || err?.message || "Request failed.";
@@ -313,6 +408,105 @@ export default function MainAreaTestTab({ mode, onTestExecuted }) {
       );
     }
   };
+
+  // Now all the things for adding to a Test Suite
+  const [currentSuiteName, setCurrentSuiteName] = useState("");
+  const [projectSuites, setProjectSuites] = useState([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isCreatingSuite, setIsCreatingSuite] = useState(false);
+  const [newSuiteName, setNewSuiteName] = useState("");
+  const dropdownRef = useRef(null);
+
+  const [hasExecuted, setHasExecuted] = useState(false);
+  const [activeRunId, setActiveRunId] = useState(null);
+
+  const handleLoadSuites = async () => {
+    if (!projectId) return;
+    try {
+      const data = await fetchsuite(projectId);
+      // Ensure data is parsed correctly depending on your API wrapper structural pattern
+      setProjectSuites(Array.isArray(data) ? data : data?.suites || []);
+    } catch (err) {
+      console.error("Failed to load project suites", err);
+    }
+  };
+
+  useEffect(() => {
+    if (projectId) {
+      handleLoadSuites();
+    }
+  }, [projectId]);
+
+  const [isLinkingSuite, setIsLinkingSuite] = useState(false);
+
+  const handleLinkToSuite = async (suiteId, suiteName) => {
+    if (!activeRunId) {
+      toast.error("No test execution run context detected.");
+      return;
+    }
+    setIsLinkingSuite(true);
+    try {
+      const res = await linkTestRun(activeRunId, suiteId);
+      setCurrentSuiteName(suiteName);
+      toast.success(`Linked to suite: ${suiteName}`);
+      setIsOpen(false);
+    } catch (err) {
+      toast.error(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to link run to suite.",
+      );
+    } finally {
+      setIsLinkingSuite(false);
+    }
+  };
+
+  const handleCreateAndLinkSuite = async (e) => {
+    e.preventDefault();
+
+    if (!newSuiteName.trim()) {
+      return;
+    }
+    if (!activeRunId) {
+      toast.error("No active execution sequence found.");
+      return;
+    }
+
+    setIsLinkingSuite(true);
+    try {
+      const suiteData = await createSuite(
+        projectId,
+        newSuiteName.trim(),
+        "New Suite",
+      );
+      console.log("-----SUITE DATA -------");
+      console.log(suiteData);
+      const generatedSuite =  suiteData;
+
+      if (generatedSuite && generatedSuite._id) {
+        await handleLinkToSuite(generatedSuite._id, generatedSuite.name);
+        setNewSuiteName("");
+        setIsCreatingSuite(false);
+        handleLoadSuites();
+      } else {
+        toast.error("Suite was created but returned no ID.");
+      }
+    } catch (err) {
+      toast.error(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to instantiate new suite target.",
+      );
+    } finally {
+      setIsLinkingSuite(false);
+    }
+  };
+
+  useEffect(() => {
+    setHasExecuted(false);
+    setActiveRunId(null);
+    setCurrentSuiteName("");
+  }, [currentAIIndex]);
 
   if (mode === "ai") {
     return (
@@ -795,7 +989,9 @@ export default function MainAreaTestTab({ mode, onTestExecuted }) {
               </div>
             </div>
           </div>
-          {/* Now The Button that Update the Test cases and Send Button */}
+
+          {/* Action Row Area */}
+          {/* Controls & Suite Actions Runway Block */}
           <div
             style={{
               marginTop: "16px",
@@ -830,8 +1026,156 @@ export default function MainAreaTestTab({ mode, onTestExecuted }) {
               </span>
             </div>
 
-            {/* RIGHT CORNER: SOLID GREEN SEND BUTTON WITH SVG ICON */}
-            <div style={{ marginLeft: "auto" }} className="shrink-0">
+            {/* RIGHT SIDE ACTIONS BUNDLE - Placed next to each other */}
+            <div
+              style={{ marginLeft: "auto" }}
+              className="flex items-center gap-3 shrink-0"
+            >
+              {/* Add to suite UI - Governed purely by boolean execution confirmation state */}
+              {hasExecuted ? (
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    onClick={() => {
+                      setIsOpen(!isOpen);
+                      setIsCreatingSuite(false);
+                    }}
+                    type="button"
+                    style={{ padding: "6px 12px", border: "1px solid #27272a" }}
+                    className={`text-[11px] font-mono font-bold tracking-wider uppercase cursor-pointer outline-none rounded-none transition-all duration-150 flex items-center gap-1.5
+        ${isOpen ? "bg-zinc-800 text-zinc-100 border-zinc-600" : "text-zinc-400 bg-[#16171d]/40 hover:text-zinc-100 hover:border-zinc-700 active:scale-[0.98]"}`}
+                  >
+                    {currentSuiteName ? (
+                      <>
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60 shadow-[0_0_4px_rgba(16,185,129,0.4)]" />
+                        Suite:{" "}
+                        <span className="text-zinc-100">
+                          {currentSuiteName}
+                        </span>
+                      </>
+                    ) : (
+                      "Add to Suite"
+                    )}
+                    <svg
+                      className={`w-2.5 h-2.5 transition-transform duration-150 ${isOpen ? "rotate-180" : ""}`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+
+                  {isOpen && (
+                    <div
+                      style={{ border: "1px solid #27272a" }}
+                      className="absolute right-0 bottom-full mb-2 w-56 bg-[#0c0c12] shadow-2xl z-50 flex flex-col font-mono"
+                    >
+                      {!isCreatingSuite ? (
+                        <>
+                          <div className="px-3 py-2 text-[9px] text-zinc-500 uppercase font-bold border-b border-zinc-900 tracking-wider">
+                            Target Action Run Suite
+                          </div>
+                          <div className="max-h-40 overflow-y-auto flex flex-col divide-y divide-zinc-900/40 custom-scrollbar">
+                            {projectSuites.length > 0 ? (
+                              projectSuites.map((suite) => (
+                                <button
+                                  key={suite._id}
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleLinkToSuite(suite._id, suite.name);
+                                  }}
+                                  disabled={isLinkingSuite}
+                                  className="w-full text-left px-3 py-2 text-[11px] text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100 transition-colors duration-100 truncate disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                  {suite.name}
+                                </button>
+                              ))
+                            ) : (
+                              <div className="px-3 py-3 text-[10px] text-zinc-600 italic">
+                                No suites configured.
+                              </div>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setIsCreatingSuite(true);
+                            }}
+                            className="w-full text-left px-3 py-2.5 text-[10px] text-emerald-400 hover:bg-emerald-950/20 hover:text-emerald-300 font-bold border-t border-zinc-900 flex items-center gap-1.5 transition-colors duration-100 uppercase"
+                          >
+                            <span>+</span> Create New Suite
+                          </button>
+                        </>
+                      ) : (
+                        <div
+                          style={{ border: "1px solid #27272a" }}
+                          className="p-3 flex flex-col gap-2 bg-[#0c0c12] relative z-[9999] pointer-events-auto"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="text-[9px] text-zinc-500 uppercase font-bold tracking-wider select-none">
+                            New Suite Title
+                          </div>
+                          <input
+                            type="text"
+                            autoFocus
+                            value={newSuiteName}
+                            onChange={(e) => setNewSuiteName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && newSuiteName.trim()) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleCreateAndLinkSuite(e);
+                              }
+                            }}
+                            placeholder="e.g. Authentication Tests"
+                            className="w-full bg-black border border-zinc-800 px-2 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-zinc-700 font-mono rounded-none relative z-[10000]"
+                          />
+                          <div className="flex gap-1.5 mt-1 relative z-[10000]">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleCreateAndLinkSuite(e);
+                              }}
+                              disabled={!newSuiteName.trim() || isLinkingSuite}
+                              className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold py-1.5 uppercase tracking-wide rounded-none disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors relative z-[10001]"
+                            >
+                              {isLinkingSuite ? "Linking..." : "Save & Link"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setIsCreatingSuite(false);
+                                setNewSuiteName("");
+                              }}
+                              className="px-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 text-[10px] font-bold py-1.5 uppercase rounded-none transition-colors cursor-pointer relative z-[10001]"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="px-3 py-[6px] text-[10px] font-mono tracking-wider text-zinc-600 bg-[#16171d]/10 uppercase select-none border border-zinc-950/40">
+                  Run test to unlock suites
+                </div>
+              )}
+
+              {/* RIGHT CORNER : SEND BUTTON */}
               <button
                 onClick={handleSendRequest}
                 disabled={isSending}
@@ -840,8 +1184,6 @@ export default function MainAreaTestTab({ mode, onTestExecuted }) {
                 className="inline-flex items-center gap-2 text-[11px] font-mono font-bold tracking-widest text-white bg-emerald-600 hover:bg-emerald-500 border-0 uppercase cursor-pointer outline-none rounded-none transition-all duration-150 active:scale-[0.96] shadow-md shadow-black/20"
               >
                 {isSending ? "Sending..." : "Send"}
-
-                {/* Crisp inline SVG Send Icon */}
                 <svg
                   className="w-3.5 h-3.5 fill-current transform -rotate-45 relative top-[1px]"
                   xmlns="http://www.w3.org/2000/svg"
@@ -918,10 +1260,19 @@ export default function MainAreaTestTab({ mode, onTestExecuted }) {
                   ) : (
                     apiResponse && (
                       <div className="flex items-center gap-2">
-                        <span className="text-[9px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 border border-emerald-500/20 uppercase">
-                          {apiResponse.status} {apiResponse.statusText}
+                        <span
+                          className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${
+                            apiResponse.status === "pass"
+                              ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+                              : "text-rose-400 bg-rose-500/10 border-rose-500/20"
+                          }`}
+                        >
+                          {apiResponse.status}
                         </span>
-                        <span className="text-[9px] font-mono font-bold text-zinc-500">
+
+                        {/* Execution/Response Time */}
+                        <span className="text-[11px] font-mono font-medium text-zinc-400 flex items-center gap-1">
+                          <span className="text-zinc-600">•</span>
                           {apiResponse.time}
                         </span>
                       </div>
@@ -952,6 +1303,7 @@ export default function MainAreaTestTab({ mode, onTestExecuted }) {
                       glyphMargin: false,
                       folding: true,
                       lineDecorationsWidth: 10,
+                      wordWrap: "on", // Wraps long text/JSON fields automatically
                       scrollbar: {
                         vertical: "visible",
                         horizontal: "visible",
@@ -968,9 +1320,9 @@ export default function MainAreaTestTab({ mode, onTestExecuted }) {
                     <Editor
                       key="response-payload-viewer"
                       height="320px"
-                      defaultLanguage="json"
+                      language={responseData.language} // Dynamically swaps to 'html', 'json', or 'plaintext'
                       theme="vs-dark"
-                      value={JSON.stringify(apiResponse.body, null, 2)}
+                      value={responseData.value}
                       options={{
                         minimap: { enabled: false },
                         fontSize: 12,
@@ -983,6 +1335,7 @@ export default function MainAreaTestTab({ mode, onTestExecuted }) {
                         glyphMargin: false,
                         folding: true,
                         lineDecorationsWidth: 10,
+                        wordWrap: "on", // Soft-wraps long elements or continuous raw lines
                         scrollbar: {
                           vertical: "visible",
                           horizontal: "visible",
@@ -999,14 +1352,6 @@ export default function MainAreaTestTab({ mode, onTestExecuted }) {
             </div>
           </div>
         </div>
-      </div>
-    );
-  }
-
-  if (mode === "normal") {
-    return (
-      <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-zinc-800/60 p-6 text-zinc-500 font-mono text-xs">
-        <span>Normal Mode Suite View</span>
       </div>
     );
   }

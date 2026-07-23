@@ -14,6 +14,7 @@ import {
 import { useParams, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import GithubSettingsPopup from "./_components/GithubSettingsPopup";
+import SideBarChatBot from "./_components/SideBarChatBot";
 import {
   Settings,
   ExternalLink,
@@ -88,7 +89,7 @@ export default function Sidebar({ activeTab, onTabChange }) {
     loadRepos();
   }, [user?.github?.connected, project?.github?.repoFullName]);
 
-  // ── Fetch Branches ──
+  // Fetch Branches
   useEffect(() => {
     const loadBranches = async () => {
       if (!repoSelected) {
@@ -412,7 +413,10 @@ export default function Sidebar({ activeTab, onTabChange }) {
 
       <div className="mt-auto border-t border-zinc-800/80 bg-[#09090f]/40 px-4 py-3.5 backdrop-blur-sm">
         {/* Optional: Section Label for context */}
-        <p className="text-[10px] uppercase tracking-wider font-semibold text-zinc-600 mb-2.5 px-1">
+        <p
+          style={{ marginBottom: "15px" }}
+          className="text-[10px] uppercase tracking-wider font-semibold text-zinc-600 mb-2.5 px-1"
+        >
           Workspace
         </p>
 
@@ -435,7 +439,6 @@ export default function Sidebar({ activeTab, onTabChange }) {
             />
             <span>Test</span>
           </button>
-
           <button
             type="button"
             onClick={() => onTabChange("history")}

@@ -420,10 +420,6 @@ export default function SignUp() {
               <div className="divider-line" />
             </div>
 
-            <button className="btn-oauth">
-              <GoogleIcon />
-              Sign in with Google
-            </button>
 
             <p className="signin-row">
               Have an account? <a href="/auth/login">Sign In</a>

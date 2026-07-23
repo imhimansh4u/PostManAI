@@ -4,7 +4,8 @@
 import KeyValueEditor from "./_components/KeyValueEditor";
 import { useState, useEffect } from "react";
 import MainAreaTestTab from "./_components/mainareaTestTab";
-import ErrorExplainPanel from "./_components/SidebarErrorExplain.jsx";
+import SideBarChatBot from "./_components/SideBarChatBot";
+import HistoryTab from "./_components/HistoryTab";
 import {
   Popover,
   PopoverContent,
@@ -68,8 +69,9 @@ export default function MainArea({ activeTab }) {
     }
   };
 
+  // If active Tab Is History
   if (activeTab === "history") {
-    return <div>Working on this</div>;
+    return <HistoryTab projectId={projectId}></HistoryTab>;
   }
 
   return (
@@ -88,14 +90,38 @@ export default function MainArea({ activeTab }) {
               style={{ paddingLeft: "7px" }}
               className="text-lg font-semibold tracking-wide text-white/90 transition-all duration-200"
             >
-              {mode === "ai" ? "AI Prompt Interface" : "Normal Testing Suite"}
+              AI Prompt Interface
             </h2>
           </div>
 
           <div
             style={{ marginLeft: "auto" }}
-            className="flex items-center shrink-0"
+            className="flex items-center gap-4 shrink-0"
           >
+            {/* AI Active Indicator Tag */}
+            <div className="flex items-center gap-2 bg-zinc-950/40 border border-zinc-800/60 px-3 py-1.5 rounded-lg shadow-sm">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                className="text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.2)]"
+              >
+                <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275Z" />
+                <path d="m5 3 1 2.5L8.5 6 6 7 5 9.5 4 7 1.5 6 4 5Z" />
+              </svg>
+              <span className="text-[11px] font-mono font-bold tracking-wide text-zinc-300 uppercase">
+                AI Mode Active
+              </span>
+            </div>
+
             <div
               style={{ width: "1px", height: "16px" }}
               className="bg-gradient-to-b from-orange-400 via-amber-500 to-orange-600 opacity-80 shrink-0"
@@ -124,57 +150,6 @@ export default function MainArea({ activeTab }) {
               </Popover>
             </div>
           </div>
-
-          <div className="flex bg-[#050508] border border-zinc-800 p-1 rounded-xl w-64 shadow-[inset_0_1px_2px_rgba(0,0,0,0.6)]">
-            <button
-              type="button"
-              onClick={() => setMode("ai")}
-              className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-xs font-medium tracking-wide transition-all duration-200 cursor-pointer group active:scale-[0.97] ${mode === "ai" ? "text-white bg-gradient-to-b from-zinc-800/90 to-zinc-900 border border-zinc-700/50 shadow-[0_2px_4px_rgba(0,0,0,0.5)] font-semibold" : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/20"}`}
-            >
-              <div
-                className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${mode === "ai" ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.7)] animate-pulse" : "bg-transparent opacity-0"}`}
-              />
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                className={`transition-colors duration-200 ${mode === "ai" ? "text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.2)]" : "text-zinc-500 group-hover:text-zinc-400"}`}
-              >
-                <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275Z" />
-                <path d="m5 3 1 2.5L8.5 6 6 7 5 9.5 4 7 1.5 6 4 5Z" />
-              </svg>
-              <span>AI Mode</span>
-            </button>
-            <button
-              style={{ padding: "10px" }}
-              type="button"
-              onClick={() => setMode("normal")}
-              className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-xs font-medium tracking-wide transition-all duration-200 cursor-pointer group active:scale-[0.97] ${mode === "normal" ? "text-white bg-gradient-to-b from-zinc-800/90 to-zinc-900 border border-zinc-700/50 shadow-[0_2px_4px_rgba(0,0,0,0.5)] font-semibold" : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/20"}`}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                className={`transition-colors duration-200 ${mode === "normal" ? "text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.2)]" : "text-zinc-500 group-hover:text-zinc-400"}`}
-              >
-                <line x1="21" x2="14" y1="4" y2="4" />
-                <line x1="10" x2="3" y1="4" y2="4" />
-                <line x1="21" x2="12" y1="12" y2="12" />
-                <line x1="8" x2="3" y1="12" y2="12" />
-                <line x1="14" x2="14" y1="2" y2="6" />
-                <line x1="8" x2="8" y1="10" y2="14" />
-              </svg>
-              <span>Normal Mode</span>
-            </button>
-          </div>
         </div>
 
         {/* ─── SPLIT VIEWPORT CONTAINER MESH GRID ─── */}
@@ -184,14 +159,15 @@ export default function MainArea({ activeTab }) {
             <MainAreaTestTab
               mode={mode}
               onModeChange={setMode}
-              onTestExecuted={setCurrentTestRunResponse} // 👈 Capture result hook link here
+              onTestExecuted={setCurrentTestRunResponse} //  Capture result hook link here
             />
           </div>
 
-          {/* Right Column Area (Takes up 1/3 of space - replaces your old constant placeholder) */}
-          <div className="col-span-1 h-full overflow-hidden">
-            <ErrorExplainPanel
-              apiResponse={currentTestRunResponse} // 👈 Feed data down directly to the panel
+          {/* Right Column Area (Takes up 1/3 of space) */}
+          <div className="col-span-1 flex h-full flex-col overflow-hidden border-l border-zinc-800/80 bg-[#0c0c12]">
+            <SideBarChatBot
+              projectName={projectId || "this project"}
+              testRunData={currentTestRunResponse}
             />
           </div>
         </div>

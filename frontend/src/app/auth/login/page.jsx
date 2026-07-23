@@ -394,11 +394,6 @@ export default function Login() {
               </p>
             )}
 
-            <button className="btn-oauth">
-              <GoogleIcon />
-              Sign in with Google
-            </button>
-
             <p className="signup-row">
               Don't have an account? <Link href="/auth/signup">Sign Up</Link>
             </p>
