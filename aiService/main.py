@@ -21,17 +21,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# @app.middleware("http")
-# async def verify_internal_key(request : Request,call_next):
-#     if request.url.path == "/health":
-#         return await call_next(request)
-#     # Only for now testing ,(Baad me yaad se remove this)
-#     if request.url.path == "/docs":
-#         return await call_next(request)
-#     key = request.headers.get("x-internal-key")
-#     if key != os.getenv("INTERNAL_API_KEY"):
-#         raise HTTPException(status_code=403,detail="Unauthorized")
-#     return await call_next(request)
+@app.middleware("http")
+async def verify_internal_key(request : Request,call_next):
+    if request.url.path == "/health":
+        return await call_next(request)
+    # Only for now testing ,(Baad me yaad se remove this)
+    if request.url.path == "/docs":
+        return await call_next(request)
+    key = request.headers.get("x-internal-key")
+    if key != os.getenv("INTERNAL_API_KEY"):
+        raise HTTPException(status_code=403,detail="Unauthorized")
+    return await call_next(request)
 
 @app.get("/")
 def home():
