@@ -62,7 +62,7 @@ You are an expert QA Automation Engineer specialized in backend API testing, sec
 """
 
 llm = ChatGroq(
-    model="llama-3.1-8b-instant",
+    model="openai/gpt-oss-120b",
     temperature=0,
     max_tokens=None,
     timeout=30,
