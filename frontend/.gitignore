@@ -52,8 +52,10 @@ venv/
 .venv/
 env/
 ENV/
-lib/
-lib64/
+venv/lib/
+venv/lib64/
+aiService/venv/lib/
+aiService/venv/lib64/
 
 # Operating System Files
 .DS_Store
