@@ -156,7 +156,6 @@ const linkTestRunToSuite = asyncHandler(async (req, res) => {
   }
 });
 
-
 // To get all the tests of a TestSuite
 const fetchTestRunsBySuite = asyncHandler(async (req, res) => {
   const { suiteId } = req.params;

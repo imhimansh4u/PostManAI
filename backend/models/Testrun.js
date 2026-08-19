@@ -1,9 +1,5 @@
 import mongoose from "mongoose";
 //TestRun Schema
-// A TestRun = one execution of a Test. Every time a test is run
-// (individually or as part of a suite), a new TestRun document
-// is created. This is the source of truth for run history,
-// regression detection, and AI failure analysis.
 
 const TestRunSchema = new mongoose.Schema(
   {

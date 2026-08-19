@@ -8,6 +8,7 @@ import githubRoutes from "./routes/github.route.js";
 import testRoutes from "./routes/test.route.js";
 import chatRoutes from "./routes/chatRoute.js";
 import suiteRoutes from "./routes/testSuiteRoutes.js"
+import bonusRoutes from  "./routes/bonusRoutes.js"
 
 dotenv.config(); // ← must be before everything else
 
@@ -58,5 +59,8 @@ app.use((err, req, res, next) => {
 
 // ChatMessage Routes
 app.use("/postmanai/v1", chatRoutes);
+
+// BonusRoutes Mainly For the Dashboard
+app.use("/postmanai/v1",bonusRoutes);
 
 export { app };
