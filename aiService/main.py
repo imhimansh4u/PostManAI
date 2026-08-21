@@ -4,6 +4,7 @@ from routers.delete_Indexed_files_router import router as delete_Indexed_files_r
 from routers.generate_router import router as generate_router
 from fastapi.middleware.cors import CORSMiddleware
 from routers.chat_router import router as chat_router
+from fastapi.responses import JSONResponse
 
 from dotenv import load_dotenv
 import os
@@ -22,15 +23,17 @@ app.add_middleware(
 )
 
 @app.middleware("http")
-async def verify_internal_key(request : Request,call_next):
+async def verify_internal_key(request: Request, call_next):
     if request.url.path == "/health":
         return await call_next(request)
-    # Only for now testing ,(Baad me yaad se remove this)
     if request.url.path == "/docs":
         return await call_next(request)
     key = request.headers.get("x-internal-key")
     if key != os.getenv("INTERNAL_API_KEY"):
-        raise HTTPException(status_code=403,detail="Unauthorized")
+        return JSONResponse(
+            status_code=403,
+            content={"detail": "Unauthorized"}
+        )
     return await call_next(request)
 
 @app.get("/")
