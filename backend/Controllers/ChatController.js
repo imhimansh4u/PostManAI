@@ -37,7 +37,10 @@ export const startChat = asyncHandler(async (req, res) => {
     const { data } = await axios.post(
       `${AI_SERVICE_URL}/chat/start`,
       { context, projectId: context.projectId },
-      { timeout: AI_TIMEOUT_MS },
+      {
+        timeout: AI_TIMEOUT_MS,
+        headers: { "x-internal-key": process.env.INTERNAL_API_KEY },
+      },
     );
     console.log("called");
     res.status(200).json(new ApiResponse(200, data, "Chat Started"));
@@ -62,7 +65,10 @@ export const sendChatMessage = asyncHandler(async (req, res) => {
     const { data } = await axios.post(
       `${AI_SERVICE_URL}/chat/message`,
       { testRunId: runId, message },
-      { timeout: AI_TIMEOUT_MS },
+      {
+        timeout: AI_TIMEOUT_MS,
+        headers: { "x-internal-key": process.env.INTERNAL_API_KEY },
+      },
     );
 
     return res.status(200).json(new ApiResponse(200, data, "Message send"));
