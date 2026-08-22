@@ -210,6 +210,7 @@ const UserMenu = ({ user }) => {
           </DropdownMenuItem>
 
           <DropdownMenuItem
+            render={<Link href="/docs" />}
             style={{
               display: "flex",
               alignItems: "center",

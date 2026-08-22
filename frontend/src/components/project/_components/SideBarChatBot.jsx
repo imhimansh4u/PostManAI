@@ -188,7 +188,7 @@ export default function SideBarChatBot({
             Error Copilot
           </CardTitle>
           <p className="text-[11px] text-zinc-500" style={{ marginTop: "4px" }}>
-            Discuss issues, errors, and fixes 
+            Discuss issues, errors, and fixes
           </p>
         </CardHeader>
 

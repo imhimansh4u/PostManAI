@@ -22,10 +22,11 @@ import {
   Loader2,
   Terminal,
   History,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
-export default function Sidebar({ activeTab, onTabChange }) {
+export default function Sidebar({ activeTab, onTabChange, onClose }) {
   const { id } = useParams();
   const searchParams = useSearchParams();
   const { user } = useAuth();
@@ -216,6 +217,14 @@ export default function Sidebar({ activeTab, onTabChange }) {
 
   return (
     <aside className="w-60 h-screen bg-[#0c0c12] border-r border-zinc-800 flex flex-col text-zinc-400 select-none relative">
+      <button
+        type="button"
+        aria-label="Close project sidebar"
+        className="project-sidebar-close"
+        onClick={onClose}
+      >
+        <X className="h-4 w-4" />
+      </button>
       <div style={{ padding: "20px" }} className="border-b border-zinc-800/60">
         {loading ? (
           <div className="space-y-4 animate-pulse">

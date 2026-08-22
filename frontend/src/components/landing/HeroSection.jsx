@@ -97,9 +97,9 @@ export default function HeroSection() {
   }, [typedText, current]);
 
   return (
-    <section className="min-h-screen flex flex-col  items-center  text-center  bg-[#080808]">
+    <section className="landing-hero min-h-screen flex flex-col items-center text-center bg-[#080808]">
       {/* ── HEADLINE ── */}
-      <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-tight">
+      <h1 className="landing-hero-title text-5xl md:text-7xl font-bold tracking-tight leading-tight">
         {/* PostmanAI — in orange gradient */}
         <span className="bg-gradient-to-r from-orange-400 via-orange-300 to-yellow-300 bg-clip-text text-transparent">
           PostmanAI
@@ -117,6 +117,7 @@ export default function HeroSection() {
       </h1>
       {/* ── DEMO BOX ── */}
       <div
+        className="landing-demo"
         style={{
           marginTop: "50px",
           width: "100%",

@@ -481,7 +481,7 @@ export default function MainAreaTestTab({ mode, onTestExecuted }) {
       );
       console.log("-----SUITE DATA -------");
       console.log(suiteData);
-      const generatedSuite =  suiteData;
+      const generatedSuite = suiteData;
 
       if (generatedSuite && generatedSuite._id) {
         await handleLinkToSuite(generatedSuite._id, generatedSuite.name);
@@ -661,7 +661,7 @@ export default function MainAreaTestTab({ mode, onTestExecuted }) {
           {/* // Here We Will show the Case no. and its Name, */}
           <div
             style={{ marginTop: "12px", padding: "8px 16px" }}
-            className="w-full max-w-[820px] mx-auto flex items-center justify-between bg-gradient-to-br from-[#121318] via-[#0d0d11] to-[#08080b] shadow-[0_4px_24px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.03)] transition-all duration-300 select-none"
+            className="project-request-summary w-full max-w-[820px] mx-auto flex items-center justify-between bg-gradient-to-br from-[#121318] via-[#0d0d11] to-[#08080b] shadow-[0_4px_24px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.03)] transition-all duration-300 select-none"
           >
             {/* Left Section: Meta Indicators and Dynamic Labels */}
             <div className="flex items-center gap-3 min-w-0">
@@ -690,12 +690,12 @@ export default function MainAreaTestTab({ mode, onTestExecuted }) {
           </div>
           <div
             style={{ padding: "4px 8px" }}
-            className="w-full max-w-[820px] mx-auto flex items-center justify-between bg-gradient-to-br from-[#121318] via-[#0d0d11] to-[#08080b] shadow-[0_4px_24px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.03)] transition-all duration-300 relative select-none"
+            className="project-request-url-row w-full max-w-[820px] mx-auto flex items-center justify-between bg-gradient-to-br from-[#121318] via-[#0d0d11] to-[#08080b] shadow-[0_4px_24px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.03)] transition-all duration-300 relative select-none"
           >
             {/* For the Method Choosing */}
             <div
               style={{ padding: "2px" }}
-              className="flex items-center w-full max-w-[820px] mx-auto border border-zinc-800"
+              className="project-request-line flex items-center w-full max-w-[820px] mx-auto border border-zinc-800"
             >
               {/* 1. METHOD SELECTOR CONTAINEr */}
               <div className="shrink-0 flex items-center">
@@ -776,9 +776,9 @@ export default function MainAreaTestTab({ mode, onTestExecuted }) {
               </div>
             </div>
             {/* Now For the Selecting Query Params */}
-            <div className="flex items-center ml-auto shrink-0">
+            <div className="project-request-options flex items-center ml-auto shrink-0">
               {/* 1. QUERY PARAMS TRIGGER BOX */}
-              <div className="flex items-center">
+              <div className="project-request-option flex items-center">
                 <Popover>
                   <PopoverTrigger
                     style={{ padding: "6px 14px" }}
@@ -808,7 +808,7 @@ export default function MainAreaTestTab({ mode, onTestExecuted }) {
               />
 
               {/* 2. HTTP HEADERS TRIGGER BOX */}
-              <div className="flex items-center">
+              <div className="project-request-option flex items-center">
                 <Popover>
                   <PopoverTrigger
                     style={{ padding: "6px 14px" }}
@@ -838,7 +838,7 @@ export default function MainAreaTestTab({ mode, onTestExecuted }) {
               />
 
               {/* 3. CONDITIONAL AUTHORIZATION MASTER CONTROLLER PANEL */}
-              <div className="flex items-center">
+              <div className="project-request-option flex items-center">
                 <Popover>
                   <PopoverTrigger
                     style={{ padding: "6px 14px" }}
@@ -998,7 +998,7 @@ export default function MainAreaTestTab({ mode, onTestExecuted }) {
               marginBottom: "12px",
               padding: "6px 12px",
             }}
-            className="w-full max-w-[820px] mx-auto flex items-center select-none"
+            className="project-suite-actions-row w-full max-w-[820px] mx-auto flex items-center select-none"
           >
             {/* LEFT CORNER: RECTANGULAR UPDATE WORKSPACE TRIGGER BUTTON */}
             <div className="shrink-0">
@@ -1170,18 +1170,18 @@ export default function MainAreaTestTab({ mode, onTestExecuted }) {
                   )}
                 </div>
               ) : (
-                <div className="px-3 py-[6px] text-[10px] font-mono tracking-wider text-zinc-600 bg-[#16171d]/10 uppercase select-none border border-zinc-950/40">
+                <div className="project-suite-locked px-3 py-[6px] text-[10px] font-mono tracking-wider text-zinc-600 bg-[#16171d]/10 uppercase select-none border border-zinc-950/40">
                   Run test to unlock suites
                 </div>
               )}
 
               {/* RIGHT CORNER : SEND BUTTON */}
               <button
+                className="project-run-send-button inline-flex items-center gap-2 text-[11px] font-mono font-bold tracking-widest text-white bg-emerald-600 hover:bg-emerald-500 border-0 uppercase cursor-pointer outline-none rounded-none transition-all duration-150 active:scale-[0.96] shadow-md shadow-black/20"
                 onClick={handleSendRequest}
                 disabled={isSending}
                 type="button"
                 style={{ padding: "6px 16px" }}
-                className="inline-flex items-center gap-2 text-[11px] font-mono font-bold tracking-widest text-white bg-emerald-600 hover:bg-emerald-500 border-0 uppercase cursor-pointer outline-none rounded-none transition-all duration-150 active:scale-[0.96] shadow-md shadow-black/20"
               >
                 {isSending ? "Sending..." : "Send"}
                 <svg
@@ -1293,6 +1293,7 @@ export default function MainAreaTestTab({ mode, onTestExecuted }) {
                     value={bodyCode}
                     onChange={(value) => setBodyCode(value || "")}
                     options={{
+                      accessibilitySupport: "off",
                       minimap: { enabled: false },
                       fontSize: 12,
                       fontFamily:
@@ -1324,6 +1325,7 @@ export default function MainAreaTestTab({ mode, onTestExecuted }) {
                       theme="vs-dark"
                       value={responseData.value}
                       options={{
+                        accessibilitySupport: "off",
                         minimap: { enabled: false },
                         fontSize: 12,
                         fontFamily:

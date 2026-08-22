@@ -75,23 +75,25 @@ export default function MainArea({ activeTab }) {
   }
 
   return (
-    <main className="flex-1 h-full overflow-hidden flex flex-col bg-[#08080c] p-6 text-zinc-100 select-none">
-      <div className="h-full rounded-2xl border border-zinc-800/80 bg-[#0c0c12] shadow-2xl shadow-black/40 flex flex-col overflow-hidden">
+    <main className="project-main-area flex-1 h-full overflow-hidden flex flex-col bg-[#08080c] p-6 text-zinc-100 select-none">
+      <div className="project-main-card h-full rounded-2xl border border-zinc-800/80 bg-[#0c0c12] shadow-2xl shadow-black/40 flex flex-col overflow-hidden">
         {/* HEADER BLOCK: CONTROLS RUNWAY */}
-        <div className="flex items-center justify-between shrink-0 border-b border-zinc-800/50 bg-[#0e0e16]/30 px-6 py-4.5">
-          <div className="flex flex-col gap-0.5">
-            <p
-              style={{ padding: "10px" }}
-              className="text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-500/90 antialiased"
-            >
-              Workspace Context
-            </p>
-            <h2
-              style={{ paddingLeft: "7px" }}
-              className="text-lg font-semibold tracking-wide text-white/90 transition-all duration-200"
-            >
-              AI Prompt Interface
-            </h2>
+        <div className="project-workspace-header flex items-center justify-between shrink-0 border-b border-zinc-800/50 bg-[#0e0e16]/30 px-6 py-4.5">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex flex-col gap-0.5 min-w-0">
+              <p
+                style={{ padding: "10px" }}
+                className="text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-500/90 antialiased"
+              >
+                Workspace Context
+              </p>
+              <h2
+                style={{ paddingLeft: "7px" }}
+                className="text-lg font-semibold tracking-wide text-white/90 transition-all duration-200"
+              >
+                AI Prompt Interface
+              </h2>
+            </div>
           </div>
 
           <div
@@ -153,7 +155,7 @@ export default function MainArea({ activeTab }) {
         </div>
 
         {/* ─── SPLIT VIEWPORT CONTAINER MESH GRID ─── */}
-        <div className="grid grid-cols-3 h-full overflow-hidden">
+        <div className="project-workspace-grid grid grid-cols-3 h-full overflow-hidden">
           {/* Left Column Area (Takes up 2/3 of space) */}
           <div className="col-span-2 border-r border-zinc-800/80 overflow-y-auto">
             <MainAreaTestTab
@@ -164,7 +166,7 @@ export default function MainArea({ activeTab }) {
           </div>
 
           {/* Right Column Area (Takes up 1/3 of space) */}
-          <div className="col-span-1 flex h-full flex-col overflow-hidden border-l border-zinc-800/80 bg-[#0c0c12]">
+          <div className="project-chat-panel col-span-1 flex h-full flex-col overflow-hidden border-l border-zinc-800/80 bg-[#0c0c12]">
             <SideBarChatBot
               projectName={projectId || "this project"}
               testRunData={currentTestRunResponse}

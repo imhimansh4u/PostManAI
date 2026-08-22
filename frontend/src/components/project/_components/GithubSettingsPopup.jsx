@@ -94,7 +94,7 @@ export default function GithubSettingsPopup({
     <div
       ref={panelRef}
       style={floatingStyle}
-      className="animate-in fade-in slide-in-from-left-2 duration-150"
+      className="github-settings-popup animate-in fade-in slide-in-from-left-2 duration-150"
     >
       {/* Header Panel Layout */}
       <div

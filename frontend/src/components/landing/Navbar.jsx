@@ -26,6 +26,7 @@ const Navbar = () => {
         borderBottom: "1px solid #1f1f2e",
         userSelect: "none",
       }}
+      className="landing-navbar"
     >
       {/* ── LEFT ZONE: ONLY LOGO & BRAND NAME ── */}
       <Link
@@ -77,9 +78,12 @@ const Navbar = () => {
       </Link>
 
       {/* ── RIGHT ZONE: ALL OTHER NAVIGATION ITEMS & ACTIONS ── */}
-      <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+      <div
+        className="landing-navbar-actions"
+        style={{ display: "flex", alignItems: "center", gap: "16px" }}
+      >
         {/* 1. Docs Button */}
-        <Link href="/docs">
+        <Link href="/docs" className="landing-docs-link">
           <button
             onClick={() => {}}
             style={{
@@ -101,7 +105,11 @@ const Navbar = () => {
         </Link>
 
         {/* 2. Get Started Button */}
-        <Link href="/dashboard" style={{ textDecoration: "none" }}>
+        <Link
+          href="/dashboard"
+          className="landing-start-link"
+          style={{ textDecoration: "none" }}
+        >
           <button
             style={{
               height: "32px",
@@ -122,7 +130,7 @@ const Navbar = () => {
             }}
             className="hover:border-zinc-600 hover:text-white active:scale-[0.98]"
           >
-            <span>Get Started</span>
+            <span className="landing-start-label">Get Started</span>
 
             {/* Custom SVG Icon */}
             <svg
